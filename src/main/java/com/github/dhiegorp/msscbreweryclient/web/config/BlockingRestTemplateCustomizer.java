@@ -20,15 +20,22 @@ import org.springframework.web.client.RestTemplate;
 //@Component
 public class BlockingRestTemplateCustomizer implements RestTemplateCustomizer {
 
+    public final BlockingRestTemplateConfiguration config;
+
+
+    public BlockingRestTemplateCustomizer(BlockingRestTemplateConfiguration config) {
+        this.config = config;
+    }
+
     public ClientHttpRequestFactory clientHttpRequestFactory() {
         PoolingHttpClientConnectionManager manager = new PoolingHttpClientConnectionManager();
-        manager.setMaxTotal(100);
-        manager.setDefaultMaxPerRoute(20);
+        manager.setMaxTotal(config.getMaxConnectionsOnPool());
+        manager.setDefaultMaxPerRoute(config.getMaxConnectionsPerRoute());
 
         RequestConfig requestConfig = RequestConfig
                 .custom()
-                .setConnectionRequestTimeout(3000)
-                .setSocketTimeout(3000)
+                .setConnectionRequestTimeout(config.getRequestTimeout())
+                .setSocketTimeout(config.getRequestSocketTimeout())
                 .build();
 
         CloseableHttpClient client = HttpClients

@@ -9,6 +9,7 @@ import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
 import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.nio.reactor.IOReactorException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateCustomizer;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsAsyncClientHttpRequestFactory;
@@ -20,18 +21,36 @@ import org.springframework.web.client.RestTemplate;
  * annotate this class as @Component and remove the same annotation from the {@link BlockingRestTemplateCustomizer}.
  */
 @Slf4j
-@Component
+//@Component
 public class NoBlockingRestTemplateCustomizer implements RestTemplateCustomizer {
+
+    private final Integer connectionTimeout;
+    private final Integer ioThreadCount;
+    private final Integer soTimeout;
+    private final Integer defaultMaxConnectionsPerRoute;
+    private final Integer defaultMaxConnections;
+
+    public NoBlockingRestTemplateCustomizer(@Value("${resttemplate.nonblocking.connectiontimeout}") Integer connectionTimeout,
+                                            @Value("${resttemplate.nonblocking.iothreadcount}") Integer ioThreadCount,
+                                            @Value("${resttemplate.nonblocking.sotimeout}") Integer soTimeout,
+                                            @Value("${resttemplate.nonblocking.defaultmaxconnectionsperroute}") Integer defaultMaxConnectionsPerRoute,
+                                            @Value("${resttemplate.nonblocking.defaultmaxconnections}") Integer defaultMaxConnections) {
+        this.connectionTimeout = connectionTimeout;
+        this.ioThreadCount = ioThreadCount;
+        this.soTimeout = soTimeout;
+        this.defaultMaxConnectionsPerRoute = defaultMaxConnectionsPerRoute;
+        this.defaultMaxConnections = defaultMaxConnections;
+    }
 
     public ClientHttpRequestFactory clientHttpRequestFactory() throws IOReactorException {
         final DefaultConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(IOReactorConfig.custom().
-                setConnectTimeout(3000).
-                setIoThreadCount(4).
-                setSoTimeout(3000).
+                setConnectTimeout(connectionTimeout).
+                setIoThreadCount(ioThreadCount).
+                setSoTimeout(soTimeout).
                 build());
         final PoolingNHttpClientConnectionManager manager = new PoolingNHttpClientConnectionManager(ioReactor);
-        manager.setDefaultMaxPerRoute(100);
-        manager.setMaxTotal(1000);
+        manager.setDefaultMaxPerRoute(defaultMaxConnectionsPerRoute);
+        manager.setMaxTotal(defaultMaxConnections);
 
         CloseableHttpAsyncClient asyncClient = HttpAsyncClients.custom().
                 setConnectionManager(manager).
