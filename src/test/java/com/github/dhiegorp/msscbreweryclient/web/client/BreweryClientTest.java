@@ -33,7 +33,6 @@ class BreweryClientTest {
     void updateBeer() {
         //given
         BeerDto dto = BeerDto.builder().beerName("japones").build();
-
         breweryClient.updateBeer(UUID.randomUUID(), dto);
 
     }
